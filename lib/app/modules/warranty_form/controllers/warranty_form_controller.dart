@@ -33,6 +33,43 @@ class WarrantyFormController extends GetxController {
 
   bool get isEditing => editingItem != null;
 
+  int get totalWarrantyDays => expiryDate.value.difference(purchaseDate.value).inDays;
+
+  int get remainingDays => expiryDate.value.difference(DateTime.now()).inDays;
+
+  bool get isExpired => remainingDays < 0;
+
+  double get coverageProgress {
+    if (totalWarrantyDays <= 0) {
+      return 0;
+    }
+
+    final double elapsed = DateTime.now().difference(purchaseDate.value).inDays / totalWarrantyDays;
+    return elapsed.clamp(0, 1).toDouble();
+  }
+
+  String get warrantyLengthLabel {
+    if (totalWarrantyDays <= 0) {
+      return 'Set a later expiry date';
+    }
+    final int months = (totalWarrantyDays / 30).round();
+    if (months >= 12 && months % 12 == 0) {
+      final int years = months ~/ 12;
+      return '$years year${years == 1 ? '' : 's'} plan';
+    }
+    return '$months month${months == 1 ? '' : 's'} plan';
+  }
+
+  String get remainingCoverageLabel {
+    if (isExpired) {
+      return 'Coverage has already ended';
+    }
+    if (remainingDays == 0) {
+      return 'Coverage ends today';
+    }
+    return '$remainingDays day${remainingDays == 1 ? '' : 's'} remaining';
+  }
+
   @override
   void onInit() {
     super.onInit();
@@ -88,6 +125,10 @@ class WarrantyFormController extends GetxController {
     final String month = date.month.toString().padLeft(2, '0');
     final String day = date.day.toString().padLeft(2, '0');
     return '${date.year}-$month-$day';
+  }
+
+  String formatCurrency(double value) {
+    return '\$${value.toStringAsFixed(2)}';
   }
 
   Future<void> pickProductImage() async {

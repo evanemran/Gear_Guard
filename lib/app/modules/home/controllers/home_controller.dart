@@ -55,6 +55,33 @@ class HomeController extends GetxController {
       .where((WarrantyItem item) => !item.isExpired && item.daysUntilExpiry <= 30)
       .length;
 
+  List<WarrantyItem> get activeWarranties =>
+      warranties.where((WarrantyItem item) => !item.isExpired).toList()
+        ..sort((WarrantyItem a, WarrantyItem b) => a.daysUntilExpiry - b.daysUntilExpiry);
+
+  WarrantyItem? get nextExpiringItem =>
+      activeWarranties.isEmpty ? null : activeWarranties.first;
+
+  String get portfolioHealthLabel {
+    if (warranties.isEmpty) {
+      return 'Start adding products to track every warranty in one place.';
+    }
+    if (expiredCount == warranties.length) {
+      return 'Every saved warranty has expired. Refresh your list with new purchases.';
+    }
+    if (expiringSoonCount > 0) {
+      return '$expiringSoonCount item${expiringSoonCount == 1 ? '' : 's'} need attention soon.';
+    }
+    return 'Your warranty portfolio looks healthy right now.';
+  }
+
+  double get activeCoverageRatio {
+    if (warranties.isEmpty) {
+      return 0;
+    }
+    return (warranties.length - expiredCount) / warranties.length;
+  }
+
   Future<void> navigateToCreate() async {
     final dynamic changed = await Get.toNamed(AppRoutes.warrantyForm);
     if (changed == true) {
@@ -84,5 +111,19 @@ class HomeController extends GetxController {
     final String month = date.month.toString().padLeft(2, '0');
     final String day = date.day.toString().padLeft(2, '0');
     return '${date.year}-$month-$day';
+  }
+
+  String formatCurrency(double value) {
+    return '\$${value.toStringAsFixed(2)}';
+  }
+
+  String warrantyStatusLabel(WarrantyItem item, {bool isLinear = false}) {
+    if (item.isExpired) {
+      return 'Expired';
+    }
+    if (item.daysUntilExpiry <= 30) {
+      return isLinear ? '${item.daysUntilExpiry} days left' : '${item.daysUntilExpiry}\ndays left';
+    }
+    return 'Protected';
   }
 }

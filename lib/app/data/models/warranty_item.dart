@@ -27,9 +27,26 @@ class WarrantyItem {
   final String? productImagePath;
   final String? invoiceImagePath;
 
-  bool get isExpired => DateTime.now().isAfter(expiryDate);
+  DateTime get _today => DateTime.now();
 
-  int get daysUntilExpiry => expiryDate.difference(DateTime.now()).inDays;
+  bool get isExpired => _today.isAfter(expiryDate);
+
+  int get daysUntilExpiry => expiryDate.difference(_today).inDays;
+
+  int get totalWarrantyDays => expiryDate.difference(purchaseDate).inDays;
+
+  int get elapsedWarrantyDays => _today.difference(purchaseDate).inDays;
+
+  int get remainingWarrantyDays => daysUntilExpiry < 0 ? 0 : daysUntilExpiry;
+
+  double get warrantyProgress {
+    if (totalWarrantyDays <= 0) {
+      return isExpired ? 1 : 0;
+    }
+
+    final double progress = elapsedWarrantyDays / totalWarrantyDays;
+    return progress.clamp(0, 1).toDouble();
+  }
 
   Map<String, Object?> toMap() {
     return <String, Object?>{
