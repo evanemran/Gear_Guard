@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_zoom_drawer/flutter_zoom_drawer.dart';
 import 'package:get/get.dart';
 import 'package:gearguard/app/core/theme/app_colors.dart';
 import 'package:gearguard/app/data/models/warranty_item.dart';
@@ -15,18 +16,74 @@ class HomeView extends StatefulWidget {
 
 class _HomeViewState extends State<HomeView> {
   final HomeController controller = Get.find<HomeController>();
+  final ZoomDrawerController _drawerController = ZoomDrawerController();
   int _currentIndex = 0;
+  int _selectedMenuIndex = 0;
+
+  @override
+  Widget build(BuildContext context) {
+    final Size screenSize = MediaQuery.sizeOf(context);
+
+    return ZoomDrawer(
+      controller: _drawerController,
+      borderRadius: 34,
+      style: DrawerStyle.defaultStyle,
+      showShadow: true,
+      angle: 0,
+      slideWidth: screenSize.width * 0.76,
+      openCurve: Curves.easeOutCubic,
+      closeCurve: Curves.easeOutCubic,
+      menuBackgroundColor: AppColors.background,
+      mainScreenTapClose: true,
+      mainScreenScale: 0.16,
+      moveMenuScreen: false,
+      shadowLayer1Color: AppColors.heroStart,
+      shadowLayer2Color: AppColors.heroMiddle,
+      menuScreen: _DrawerMenu(
+        selectedIndex: _selectedMenuIndex,
+        onItemTap: (int index) {
+          setState(() {
+            _selectedMenuIndex = index;
+            if (index == 0) {
+              _currentIndex = 0;
+            }
+          });
+          _drawerController.toggle?.call();
+        },
+      ),
+      mainScreen: _HomeMainScreen(
+        currentIndex: _currentIndex,
+        onMenuPressed: () => _drawerController.toggle?.call(),
+        onTabChanged: (int index) => setState(() => _currentIndex = index),
+        controller: controller,
+      ),
+    );
+  }
+}
+
+class _HomeMainScreen extends StatelessWidget {
+  const _HomeMainScreen({
+    required this.currentIndex,
+    required this.onMenuPressed,
+    required this.onTabChanged,
+    required this.controller,
+  });
+
+  final int currentIndex;
+  final VoidCallback onMenuPressed;
+  final ValueChanged<int> onTabChanged;
+  final HomeController controller;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          _currentIndex == 0 ? 'Gear Guard' : 'My Items',
+          currentIndex == 0 ? 'Gear Guard' : 'My Items',
           style: const TextStyle(fontWeight: FontWeight.w700),
         ),
         leading: IconButton(
-          onPressed: () {},
+          onPressed: onMenuPressed,
           icon: const Icon(Icons.menu_rounded),
           color: Colors.white,
         ),
@@ -53,8 +110,8 @@ class _HomeViewState extends State<HomeView> {
                 child: _ModernNavItem(
                   label: 'Home',
                   icon: Icons.grid_view_rounded,
-                  isActive: _currentIndex == 0,
-                  onTap: () => setState(() => _currentIndex = 0),
+                  isActive: currentIndex == 0,
+                  onTap: () => onTabChanged(0),
                 ),
               ),
               Padding(
@@ -67,8 +124,8 @@ class _HomeViewState extends State<HomeView> {
                 child: _ModernNavItem(
                   label: 'Items',
                   icon: Icons.widgets_rounded,
-                  isActive: _currentIndex == 1,
-                  onTap: () => setState(() => _currentIndex = 1),
+                  isActive: currentIndex == 1,
+                  onTap: () => onTabChanged(1),
                 ),
               ),
             ],
@@ -76,11 +133,283 @@ class _HomeViewState extends State<HomeView> {
         ),
       ),
       body: IndexedStack(
-        index: _currentIndex,
+        index: currentIndex,
         children: <Widget>[
           _HomeTab(controller: controller),
           _CategoriesTab(controller: controller),
         ],
+      ),
+    );
+  }
+}
+
+class _DrawerMenu extends StatelessWidget {
+  const _DrawerMenu({
+    required this.selectedIndex,
+    required this.onItemTap,
+  });
+
+  final int selectedIndex;
+  final ValueChanged<int> onItemTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final List<_DrawerMenuEntry> items = <_DrawerMenuEntry>[
+      const _DrawerMenuEntry(
+        label: 'Home',
+        icon: Icons.home_rounded,
+      ),
+      const _DrawerMenuEntry(
+        label: 'Notifications',
+        icon: Icons.notifications_active_rounded,
+      ),
+      const _DrawerMenuEntry(
+        label: 'Settings',
+        icon: Icons.tune_rounded,
+      ),
+      const _DrawerMenuEntry(
+        label: 'Policy',
+        icon: Icons.verified_user_rounded,
+      ),
+    ];
+
+    return Scaffold(
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: <Color>[
+              AppColors.background,
+              AppColors.backgroundRaised,
+              Color(0xFF110D0B),
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(22, 18, 12, 24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+                  width: double.maxFinite,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(28),
+                    gradient: const LinearGradient(
+                      colors: <Color>[
+                        AppColors.heroStart,
+                        AppColors.heroMiddle,
+                      ],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    border: Border.all(color: AppColors.softBorder),
+                    boxShadow: AppColors.primaryGlow,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      Container(
+                        width: 56,
+                        height: 56,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(18),
+                          gradient: const LinearGradient(
+                            colors: <Color>[
+                              AppColors.primary,
+                              AppColors.primaryDeep,
+                            ],
+                          ),
+                        ),
+                        child: const Icon(
+                          Icons.shield_moon_rounded,
+                          color: Colors.white,
+                          size: 28,
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: <Widget>[
+                          Text(
+                            'Gear Guard',
+                            style: TextStyle(
+                              color: AppColors.textPrimary,
+                              fontSize: 20,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          SizedBox(height: 4),
+                          Text(
+                            'Warranty control center',
+                            style: TextStyle(
+                              color: AppColors.textMuted,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 26),
+                const Text(
+                  'Navigation',
+                  style: TextStyle(
+                    color: AppColors.primarySoft,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.4,
+                  ),
+                ),
+                const SizedBox(height: 14),
+                ...List<Widget>.generate(items.length, (int index) {
+                  final _DrawerMenuEntry item = items[index];
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 10),
+                    child: _DrawerMenuTile(
+                      label: item.label,
+                      icon: item.icon,
+                      isActive: selectedIndex == index,
+                      onTap: () => onItemTap(index),
+                    ),
+                  );
+                }),
+                const Spacer(),
+                Container(
+                  padding: const EdgeInsets.all(18),
+                  decoration: BoxDecoration(
+                    color: AppColors.surface.withValues(alpha: 0.85),
+                    borderRadius: BorderRadius.circular(24),
+                    border: Border.all(color: AppColors.softBorder),
+                  ),
+                  child: const Row(
+                    children: <Widget>[
+                      Icon(
+                        Icons.lock_clock_rounded,
+                        color: AppColors.primarySoft,
+                      ),
+                      SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: <Widget>[
+                            Text(
+                              'Protected records',
+                              style: TextStyle(
+                                color: AppColors.textPrimary,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            SizedBox(height: 4),
+                            Text(
+                              'Keep receipts organized.',
+                              style: TextStyle(
+                                color: AppColors.textMuted,
+                                height: 1.35,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _DrawerMenuEntry {
+  const _DrawerMenuEntry({
+    required this.label,
+    required this.icon,
+  });
+
+  final String label;
+  final IconData icon;
+}
+
+class _DrawerMenuTile extends StatelessWidget {
+  const _DrawerMenuTile({
+    required this.label,
+    required this.icon,
+    required this.isActive,
+    required this.onTap,
+  });
+
+  final String label;
+  final IconData icon;
+  final bool isActive;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(22),
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 220),
+        curve: Curves.easeOutCubic,
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(22),
+          gradient: isActive
+              ? const LinearGradient(
+                  colors: <Color>[
+                    AppColors.primaryDeep,
+                    AppColors.primary,
+                  ],
+                  begin: Alignment.centerLeft,
+                  end: Alignment.centerRight,
+                )
+              : null,
+          color: isActive ? null : AppColors.surface.withValues(alpha: 0.72),
+          border: Border.all(
+            color: isActive
+                ? const Color(0x26FFFFFF)
+                : AppColors.softBorder,
+          ),
+          boxShadow: isActive ? AppColors.primaryGlow : null,
+        ),
+        child: Row(
+          children: <Widget>[
+            Container(
+              width: 42,
+              height: 42,
+              decoration: BoxDecoration(
+                color: isActive
+                    ? const Color(0x22FFFFFF)
+                    : AppColors.surfaceAlt,
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: Icon(
+                icon,
+                color: isActive ? Colors.white : AppColors.primarySoft,
+              ),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Text(
+                label,
+                style: TextStyle(
+                  color: isActive ? Colors.white : AppColors.textPrimary,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 15,
+                ),
+              ),
+            ),
+            Icon(
+              Icons.arrow_outward_rounded,
+              size: 18,
+              color: isActive ? Colors.white : AppColors.textMuted,
+            ),
+          ],
+        ),
       ),
     );
   }
